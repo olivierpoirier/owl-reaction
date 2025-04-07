@@ -10,6 +10,7 @@ export default function App() {
       const storage = OBR.storage;
       storage.get("customTokens").then((data) => {
         setTokens(data || []);
+        console.log(data);
       });
 
       const unsubscribeStorage = storage.onChange("customTokens", (data) => {
