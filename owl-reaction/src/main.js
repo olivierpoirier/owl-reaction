@@ -1,5 +1,10 @@
-import OBR, { buildImageUpload, downloadImages } from "@owlbear-rodeo/sdk";
+import OBR from "@owlbear-rodeo/sdk";
 
-const object = await OBR.assets.uploadScenes([scene]);
-console.log("obj");
-console.log(object)
+async function pickImages() {
+  const images = await OBR.assets.downloadImages(true)
+  console.log(images)
+}
+
+document.getElementById("pick").addEventListener("click", pickImages)
+
+
