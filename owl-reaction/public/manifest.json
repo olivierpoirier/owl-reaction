@@ -8,5 +8,7 @@
       "popover": "/",
       "height": 600,
       "width": 400
-    }
+    },
+    "permissions": ["STORAGE"],
+    "popout": true
   }
