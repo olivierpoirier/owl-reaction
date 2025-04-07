@@ -4,6 +4,13 @@ const storage = sdk.storage
 const tokenList = document.getElementById("token-list")
 console.log(tokenList)
 
+
+sdk.scene.getItems().then((items) => {
+  console.log("Objets de la scène :", items)
+}).catch((err) => {
+  console.error("Erreur scène :", err)
+})
+
 // Fonction pour afficher les tokens dans le HTML
 function renderTokens(tokens) {
   tokenList.innerHTML = "" // Vide la liste
