@@ -1,0 +1,9 @@
+{
+    "id": "owl-reaction",
+    "name": "Owl Reaction!",
+    "icon": "/icon.svg",
+    "entry": "/",
+    "permissions": ["STORAGE"],
+    "popout": true
+  }
+  
