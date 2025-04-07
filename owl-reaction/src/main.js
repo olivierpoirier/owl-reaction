@@ -1,6 +1,6 @@
-import { useStorage } from "@owlbear-rodeo/sdk"
+import sdk from "@owlbear-rodeo/sdk"
 
-const storage = useStorage()
+const storage = sdk.storage
 const tokenList = document.getElementById("token-list")
 
 // Fonction pour afficher les tokens dans le HTML
