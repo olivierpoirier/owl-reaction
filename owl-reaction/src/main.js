@@ -2,6 +2,7 @@ import sdk from "@owlbear-rodeo/sdk"
 
 const storage = sdk.storage
 const tokenList = document.getElementById("token-list")
+console.log(tokenList)
 
 // Fonction pour afficher les tokens dans le HTML
 function renderTokens(tokens) {
