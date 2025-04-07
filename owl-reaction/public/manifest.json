@@ -1,14 +1,11 @@
 {
+    "id": "owl-reaction",
     "name": "Owl Reaction",
+    "icon": "/icon.svg",
+    "entry": "/",
     "version": "1.0.0",
     "manifest_version": 1,
-    "action": {
-      "title": "Owl Reaction!",
-      "icon": "/icon.svg",
-      "popover": "/",
-      "height": 600,
-      "width": 400
-    },
     "permissions": ["STORAGE"],
     "popout": true
   }
+  
