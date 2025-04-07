@@ -1,45 +1,12 @@
-import sdk from "@owlbear-rodeo/sdk"
+import OBR from "@owlbear-rodeo/sdk";
 
-const storage = sdk.storage
-const tokenList = document.getElementById("token-list")
-console.log(tokenList)
-
-
-sdk.scene.getItems().then((items) => {
-  console.log("Objets de la scène :", items)
-}).catch((err) => {
-  console.error("Erreur scène :", err)
-})
-
-// Fonction pour afficher les tokens dans le HTML
-function renderTokens(tokens) {
-  tokenList.innerHTML = "" // Vide la liste
-  if (!tokens || tokens.length === 0) {
-    tokenList.innerHTML = "<li>Aucun token sauvegardé</li>"
-    return
-  }
-
-  tokens.forEach((token) => {
-    const li = document.createElement("li")
-    li.style.border = "1px solid #ccc"
-    li.style.padding = "8px"
-    li.style.marginBottom = "4px"
-    li.style.borderRadius = "6px"
-    li.innerHTML = `
-      <strong>${token.name}</strong><br />
-      HP : ${token.hp}<br />
-      ${token.note ? `<em>${token.note}</em>` : ""}
-    `
-    tokenList.appendChild(li)
-  })
+export function setupCounter(element) {
+  let counter = 0;
+  const setCounter = (count) => {
+    counter = count;
+    element.innerHTML = `count is ${counter}`;
+    OBR.notification.show(`count is ${counter}`);
+  };
+  element.addEventListener("click", () => setCounter(counter + 1));
+  setCounter(0);
 }
-
-// Charger les tokens au lancement
-storage.get("customTokens").then((data) => {
-  renderTokens(data || [])
-})
-
-// Écouter les changements en direct
-storage.onChange("customTokens", (data) => {
-  renderTokens(data || [])
-})
