@@ -57,7 +57,7 @@ export default function App() {
   }, [])
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-[500px]">
       <h1 className="text-lg font-bold mb-4 text-center">🧾 TEXT & 🖼️ IMAGE Items</h1>
 
       {noScene ? (
@@ -69,7 +69,7 @@ export default function App() {
         {items
             .filter((item) => item.type === "IMAGE" && item.image?.url)
             .map((item) => (
-            <div key={item.id} className="aspect-square w-full max-w-[64px]">
+            <div key={item.id} className="aspect-square w-1/6">
                 <img
                 src={item.image.url}
                 alt={item.name || "Image"}
