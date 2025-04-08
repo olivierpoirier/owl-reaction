@@ -7,17 +7,28 @@ export default function App() {
   const [items, setItems] = useState([])
   const [soundUrl, setSoundUrl] = useState(null)
 
+  // ✅ Vérifie que la donnée est JSON-sérialisable
+  function isJSONSerializable(value) {
+    try {
+      JSON.stringify(value)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   useEffect(() => {
     const handleMessage = (message) => {
       if (message?.type !== BROADCAST_EVENT) return
       const { imageUrl } = message.data
       if (typeof imageUrl === "string") {
         displayImagePopup(imageUrl)
+      } else {
+        console.warn("❌ imageUrl non valide dans le broadcast :", message)
       }
     }
 
     OBR.onReady(async () => {
-      // Charger les images de la scène
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
         const filtered = allItems.filter(
@@ -32,13 +43,11 @@ export default function App() {
           setItems(updatedFiltered)
         })
 
-        // Écoute des broadcasts
         OBR.broadcast.onMessage(handleMessage)
       }
     })
   }, [soundUrl])
 
-  // Crée et affiche l'image temporaire sur la carte
   const displayImagePopup = async (imageUrl) => {
     const camera = await OBR.viewport.getCamera()
     const position = camera.position
@@ -76,8 +85,14 @@ export default function App() {
   }
 
   const handleClickImage = async (imageUrl) => {
-    if (!imageUrl) return
-    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
+    const data = { imageUrl }
+
+    if (!isJSONSerializable(data)) {
+      console.warn("❌ Donnée non JSON-sérialisable :", data)
+      return
+    }
+
+    await OBR.broadcast.sendMessage(BROADCAST_EVENT, data)
   }
 
   return (
