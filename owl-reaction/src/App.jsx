@@ -1,123 +1,148 @@
 import React, { useEffect, useState } from "react"
 import OBR from "@owlbear-rodeo/sdk"
 
-const BROADCAST_EVENT = "owl-reaction-play"
+const BROADCAST_EVENT = "owl-reaction-show"
 
 export default function App() {
   const [items, setItems] = useState([])
-  const [soundUrl, setSoundUrl] = useState(null)
+  const [noScene, setNoScene] = useState(false)
+  const [soundUrl, setSoundUrl] = useState("")
+  const [showImage, setShowImage] = useState(null)
+  const [audio, setAudio] = useState(null)
 
+  // Initialisation Owlbear + écoute du broadcast
   useEffect(() => {
     const handleMessage = (message) => {
       if (message?.type !== BROADCAST_EVENT) return
-      const { imageUrl } = message.data
+      const { imageUrl } = message.data || {}
       if (typeof imageUrl === "string") {
-        displayImagePopup(imageUrl)
-      } else {
-        console.warn("❌ imageUrl non valide dans le broadcast :", message)
+        triggerImagePopup(imageUrl)
       }
     }
 
-    OBR.onReady(async () => {
-      if (await OBR.scene.isReady()) {
-        const allItems = await OBR.scene.items.getItems()
-        const filtered = allItems.filter(
-          (item) => item.type === "IMAGE" && item.image?.url
-        )
-        setItems(filtered)
+    const unsubscribe = OBR.onReady(async () => {
+      const checkScene = async () => {
+        try {
+          const isSceneReady = await OBR.scene.isReady()
+          if (!isSceneReady) {
+            setTimeout(checkScene, 500)
+            return
+          }
 
-        OBR.scene.items.onChange((updated) => {
-          const updatedFiltered = updated.filter(
-            (item) => item.type === "IMAGE" && item.image?.url
+          const sceneItems = await OBR.scene.items.getItems()
+          const filtered = sceneItems.filter(
+            (item) => item.type === "IMAGE" || item.type === "TEXT"
           )
-          setItems(updatedFiltered)
-        })
+          setItems(filtered)
 
-        OBR.broadcast.onMessage(handleMessage)
+          const unsubChange = OBR.scene.items.onChange((updatedItems) => {
+            const updatedTokens = updatedItems.filter(
+              (item) => item.type === "IMAGE" || item.type === "TEXT"
+            )
+            setItems(updatedTokens)
+          })
+
+          OBR.broadcast.onMessage(handleMessage)
+
+          return () => {
+            unsubChange()
+            OBR.broadcast.offMessage(handleMessage)
+          }
+        } catch (err) {
+          console.error("❌ Erreur lors du chargement de la scène :", err)
+          setNoScene(true)
+        }
       }
+
+      checkScene()
     })
-  }, []) // ✅ pas de dépendance à soundUrl
 
-  const displayImagePopup = async (imageUrl) => {
-    const camera = await OBR.viewport.getCamera()
-    const position = camera.position
-    const id = `popup-${Date.now()}`
+    return () => unsubscribe()
+  }, [])
 
-    const imageItem = {
-      type: "IMAGE",
-      id,
-      image: { url: imageUrl },
-      position,
-      scale: { x: 4, y: 4 },
-      layer: "ATTACHMENT",
-      locked: true,
-      disabled: true,
-      visible: true,
-    }
+  // Fonction centrale pour afficher une image
+  const triggerImagePopup = (imageUrl) => {
+    setShowImage(imageUrl)
+    setTimeout(() => setShowImage(null), 3000)
+  }
 
-    await OBR.scene.items.addItems([imageItem])
+  // Lorsqu'on clique sur une image
+  const handleClickToken = async (imageUrl) => {
+    // Envoie à tous
+    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
 
-    setTimeout(() => {
-      OBR.scene.items.deleteItems([id])
-    }, 3000)
+    // Affiche localement aussi
+    triggerImagePopup(imageUrl)
 
-    // ✅ Seul l'utilisateur local joue le son (si présent)
-    if (soundUrl) {
-      const audio = new Audio(soundUrl)
-      audio.play().catch(() => {})
+    // Joue le son localement
+    if (audio) {
+      audio.currentTime = 0
+      audio.play().catch(console.warn)
     }
   }
 
-  const handleSoundUpload = (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
-      setSoundUrl(URL.createObjectURL(file))
+      const url = URL.createObjectURL(file)
+      setSoundUrl(url)
+      setAudio(new Audio(url))
     }
   }
 
-  const handleClickImage = async (imageUrl) => {
-    const data = { imageUrl }
-
-    // Vérifie que l'image est bien sérialisable
-    try {
-      await OBR.broadcast.sendMessage(BROADCAST_EVENT, data)
-      // ✅ Et aussi localement pour l’émetteur (car il ne reçoit pas son propre broadcast)
-      await displayImagePopup(imageUrl)
-    } catch (e) {
-      console.warn("❌ Erreur lors du broadcast :", e)
-    }
+  const handleSoundLink = (e) => {
+    const url = e.target.value
+    setSoundUrl(url)
+    setAudio(new Audio(url))
   }
 
   return (
     <div className="p-4 max-w-[500px]">
-      <h1 className="text-lg font-bold mb-4 text-center">🦉 Owl Reaction</h1>
+      <h1 className="text-lg font-bold mb-4 text-center">🧾 TEXT & 🖼️ IMAGE Items</h1>
 
-      <div className="mb-4">
-        <label className="block text-sm font-semibold mb-1">🎵 Dépose un son (optionnel) :</label>
+      {/* Zone de son */}
+      <div className="mb-4 space-y-2">
+        <label className="block text-sm font-semibold">🎧 Dépose un son :</label>
+        <input type="file" accept="audio/*" onChange={handleFileUpload} className="block w-full" />
         <input
-          type="file"
-          accept="audio/*"
-          onChange={handleSoundUpload}
-          className="block w-full"
+          type="text"
+          placeholder="Ou colle un lien vers un son..."
+          className="w-full border rounded px-2 py-1 text-sm"
+          onBlur={handleSoundLink}
         />
-        {soundUrl && <p className="text-xs text-green-600 mt-1">✅ Son chargé</p>}
+        {soundUrl && <p className="text-xs text-green-600">✅ Son prêt</p>}
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="aspect-square cursor-pointer"
-            onClick={() => handleClickImage(item.image.url)}
-          >
-            <img
-              src={item.image.url}
-              alt={item.name || "Image"}
-              className="w-full h-full object-contain rounded shadow"
-            />
-          </div>
-        ))}
-      </div>
+      {noScene ? (
+        <p className="text-sm text-red-500 text-center">🚫 Aucune scène active détectée.</p>
+      ) : items.length === 0 ? (
+        <p className="text-sm italic text-center">Aucun élément TEXT ou IMAGE trouvé</p>
+      ) : (
+        <div className="grid grid-cols-5 gap-2">
+          {items
+            .filter((item) => item.type === "IMAGE" && item.image?.url)
+            .map((item) => (
+              <div
+                key={item.id}
+                className="aspect-square cursor-pointer"
+                onClick={() => handleClickToken(item.image.url)}
+              >
+                <img
+                  src={item.image.url}
+                  alt={item.name || "Image"}
+                  className="w-full h-full object-contain rounded shadow"
+                />
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Popup image plein écran */}
+      {showImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+          <img src={showImage} alt="Token" className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg" />
+        </div>
+      )}
     </div>
   )
 }
