@@ -1,13 +1,19 @@
 {
-    "name": "Owl Reaction!",
+    "id": "owl-reaction",
+    "title": "Owl Reaction",
+    "description": "Permet d’agrandir temporairement des tokens. Le MJ peut autoriser ou bloquer la fonction.",
     "version": "1.0.0",
-    "manifest_version": 1,
-    "action": {
-      "title": "Owl Reaction!",
-      "icon": "/icon.svg",
-      "popover": "/",
-      "height": 600,
-      "width": 400
-    }
-}
+    "authors": ["TonNom#0000"],
+    "compatibility": {
+      "minimum": "1.9.0"
+    },
+    "entry": "index.html",
+    "features": [
+      "player",
+      "scene",
+      "scene-items",
+      "settings"
+    ],
+    "tags": ["visual", "utility", "gm"]
+  }
   
