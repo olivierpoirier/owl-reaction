@@ -22,22 +22,14 @@ export default function App() {
 
           console.log("✅ Scène active détectée")
 
-          const sceneItems = await OBR.scene.items.getItems()
-          console.log("📦 Tous les items de la scène :", sceneItems)
-
-          const filtered = sceneItems.filter(
-            (item) => item.type === "IMAGE" || item.type === "TEXT"
-          )
-
-          console.log("🎯 Items filtrés :", filtered)
-          setItems(filtered)
+          const items = await OBR.scene.items.getItems()
+          const tokenItems = items.filter((item) => item.type === "token")
+          console.log("🧩 Tokens détectés :", tokenItems)
+          setTokens(tokenItems)
 
           const unsubChange = OBR.scene.items.onChange((updatedItems) => {
-            const filteredUpdated = updatedItems.filter(
-              (item) => item.type === "IMAGE" || item.type === "TEXT"
-            )
-            console.log("🔁 Mise à jour des items :", filteredUpdated)
-            setItems(filteredUpdated)
+            const updatedTokens = updatedItems.filter((item) => item.type === "token")
+            setTokens(updatedTokens)
           })
 
           return () => unsubChange()
@@ -51,7 +43,7 @@ export default function App() {
     })
 
     return () => {
-      console.log("🧹 Nettoyage de OBR.onReady :)")
+      console.log("🧹 Nettoyage de OBR.onReady")
       unsubscribe()
     }
   }, [])

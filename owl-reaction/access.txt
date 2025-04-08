@@ -1,0 +1,1 @@
+https://owlbear.local:5173/manifest.json
