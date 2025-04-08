@@ -8,67 +8,64 @@ export default function App() {
   const [soundUrl, setSoundUrl] = useState(null)
 
   useEffect(() => {
-    // Écoute des clics broadcastés par d'autres joueurs
-    const handleMessage = async (message) => {
-      if (message?.type !== BROADCAST_EVENT) return
-
-      const { imageUrl } = message.data
-      const camera = await OBR.viewport.getCamera()
-      const position = camera.position
-      const id = `popup-${Date.now()}`
-
-      const imageItem = {
-        type: "IMAGE",
-        id,
-        image: { url: imageUrl },
-        position,
-        scale: { x: 4, y: 4 },
-        layer: "ATTACHMENT",
-        locked: true,
-        disabled: true,
-        visible: true,
-      }
-
-      await OBR.scene.items.addItems([imageItem])
-      setTimeout(() => {
-        OBR.scene.items.deleteItems([id])
-      }, 3000)
-
-      if (soundUrl) {
-        const audio = new Audio(soundUrl)
-        audio.play().catch(() => {})
-      }
-    }
-
     OBR.onReady(async () => {
+      // Récupérer les items dès que la scène est prête
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
         const filtered = allItems.filter(item => item.type === "IMAGE" && item.image?.url)
         setItems(filtered)
+
+        OBR.scene.items.onChange((updated) => {
+          const updatedFiltered = updated.filter(item => item.type === "IMAGE" && item.image?.url)
+          setItems(updatedFiltered)
+        })
       }
 
-      OBR.scene.items.onChange((updated) => {
-        const filtered = updated.filter(item => item.type === "IMAGE" && item.image?.url)
-        setItems(filtered)
+      // 🔊 Écouter les broadcasts entrants
+      OBR.broadcast.onMessage(async (message) => {
+        if (message?.type !== BROADCAST_EVENT) return
+        const { imageUrl } = message.data
+        if (!imageUrl) return
+
+        const camera = await OBR.viewport.getCamera()
+        const position = camera.position
+        const id = `popup-${Date.now()}`
+
+        const imageItem = {
+          type: "IMAGE",
+          id,
+          image: { url: imageUrl },
+          position,
+          scale: { x: 4, y: 4 },
+          layer: "ATTACHMENT",
+          locked: true,
+          disabled: true,
+          visible: true,
+        }
+
+        await OBR.scene.items.addItems([imageItem])
+        setTimeout(() => {
+          OBR.scene.items.deleteItems([id])
+        }, 3000)
+
+        // Ne joue le son que localement
+        if (soundUrl) {
+          const audio = new Audio(soundUrl)
+          audio.play().catch(() => {})
+        }
       })
-
-      OBR.broadcast.onMessage(handleMessage)
     })
-
-    return () => {
-      OBR.broadcast.offMessage(handleMessage)
-    }
   }, [soundUrl])
 
-  const onUploadSound = (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
       setSoundUrl(URL.createObjectURL(file))
     }
   }
 
-  const handleClick = async (url) => {
-    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl: url })
+  const handleClickToken = (imageUrl) => {
+    OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
   }
 
   return (
@@ -77,7 +74,7 @@ export default function App() {
 
       <div className="mb-4">
         <label className="block text-sm font-semibold mb-1">Dépose un son :</label>
-        <input type="file" accept="audio/*" onChange={onUploadSound} className="block w-full" />
+        <input type="file" accept="audio/*" onChange={handleFileUpload} className="block w-full" />
         {soundUrl && <p className="text-xs text-green-600 mt-1">✅ Son chargé</p>}
       </div>
 
@@ -86,7 +83,7 @@ export default function App() {
           <div
             key={item.id}
             className="aspect-square cursor-pointer"
-            onClick={() => handleClick(item.image.url)}
+            onClick={() => handleClickToken(item.image.url)}
           >
             <img
               src={item.image.url}
