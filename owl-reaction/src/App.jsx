@@ -65,19 +65,20 @@ export default function App() {
       ) : items.length === 0 ? (
         <p className="text-sm italic text-center">Aucun élément TEXT ou IMAGE trouvé</p>
       ) : (
-        <div className="grid grid-cols-5 gap-2 justify-items-center">
-          {items
+        <div className="grid grid-cols-5 gap-2">
+        {items
             .filter((item) => item.type === "IMAGE" && item.image?.url)
             .map((item) => (
-              <div key={item.id} className="w-full flex justify-center">
+            <div key={item.id} className="aspect-square w-full max-w-[64px]">
                 <img
-                  src={item.image.url}
-                  alt={item.name || "Image"}
-                  className="w-full max-w-[70px] h-[70px] object-contain rounded border shadow"
+                src={item.image.url}
+                alt={item.name || "Image"}
+                className="w-full h-full object-contain rounded border shadow"
                 />
-              </div>
+            </div>
             ))}
         </div>
+
       )}
     </div>
   )
