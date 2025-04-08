@@ -58,43 +58,25 @@ export default function App() {
 
   return (
     <div className="p-4">
-      <h1 className="text-lg font-bold mb-2">🧾 TEXT & 🖼️ IMAGE Items</h1>
+      <h1 className="text-lg font-bold mb-4 text-center">🧾 TEXT & 🖼️ IMAGE Items</h1>
 
       {noScene ? (
-        <p className="text-sm text-red-500">🚫 Aucune scène active détectée.</p>
+        <p className="text-sm text-red-500 text-center">🚫 Aucune scène active détectée.</p>
       ) : items.length === 0 ? (
-        <p className="text-sm italic">Aucun élément TEXT ou IMAGE trouvé</p>
+        <p className="text-sm italic text-center">Aucun élément TEXT ou IMAGE trouvé</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {items.map((item) => (
-            <div key={item.id} className="border rounded p-2 bg-white shadow">
-                {/*
-                    <p className="text-xs text-gray-500 mb-1">Type: {item.type}</p>
-                */}
-
-
-              {item.type === "IMAGE" && item.image?.url && (
+        <div className="grid grid-cols-5 gap-2 justify-items-center">
+          {items
+            .filter((item) => item.type === "IMAGE" && item.image?.url)
+            .map((item) => (
+              <div key={item.id} className="w-full flex justify-center">
                 <img
                   src={item.image.url}
                   alt={item.name || "Image"}
-                  className="w-1/5 h-auto rounded"
+                  className="w-full max-w-[70px] h-[70px] object-contain rounded border shadow"
                 />
-              )}
-
-            {/*
-              {item.type === "TEXT" && (
-                <div className="text-sm font-medium text-center text-blue-700">
-                  {item.text?.plainText || "(Texte vide)"}
-                </div>
-              )}
-                */}
-
-              {/*<p className="text-xs mt-2 text-center text-gray-800 font-semibold">
-                {item.name || "Sans nom"}
-              </p>
-              */}
-            </div>
-          ))}
+              </div>
+            ))}
         </div>
       )}
     </div>
