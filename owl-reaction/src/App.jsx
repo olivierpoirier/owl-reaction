@@ -9,53 +9,57 @@ export default function App() {
 
   useEffect(() => {
     OBR.onReady(async () => {
-      // Récupérer les items dès que la scène est prête
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
         const filtered = allItems.filter(item => item.type === "IMAGE" && item.image?.url)
         setItems(filtered)
-
+  
         OBR.scene.items.onChange((updated) => {
           const updatedFiltered = updated.filter(item => item.type === "IMAGE" && item.image?.url)
           setItems(updatedFiltered)
         })
       }
-
-      // 🔊 Écouter les broadcasts entrants
-      OBR.broadcast.onMessage(async (message) => {
+  
+      // ✅ NE PAS utiliser de async directement ici
+      const handleMessage = (message) => {
         if (message?.type !== BROADCAST_EVENT) return
-        const { imageUrl } = message.data
-        if (!imageUrl) return
-
-        const camera = await OBR.viewport.getCamera()
-        const position = camera.position
-        const id = `popup-${Date.now()}`
-
-        const imageItem = {
-          type: "IMAGE",
-          id,
-          image: { url: imageUrl },
-          position,
-          scale: { x: 4, y: 4 },
-          layer: "ATTACHMENT",
-          locked: true,
-          disabled: true,
-          visible: true,
-        }
-
-        await OBR.scene.items.addItems([imageItem])
-        setTimeout(() => {
-          OBR.scene.items.deleteItems([id])
-        }, 3000)
-
-        // Ne joue le son que localement
-        if (soundUrl) {
-          const audio = new Audio(soundUrl)
-          audio.play().catch(() => {})
-        }
-      })
+        displayImagePopup(message.data.imageUrl)
+      }
+  
+      OBR.broadcast.onMessage(handleMessage)
     })
   }, [soundUrl])
+  
+  // ✅ async déplacé ici
+  const displayImagePopup = async (imageUrl) => {
+    if (!imageUrl) return
+  
+    const camera = await OBR.viewport.getCamera()
+    const position = camera.position
+    const id = `popup-${Date.now()}`
+  
+    const imageItem = {
+      type: "IMAGE",
+      id,
+      image: { url: imageUrl },
+      position,
+      scale: { x: 4, y: 4 },
+      layer: "ATTACHMENT",
+      locked: true,
+      disabled: true,
+      visible: true,
+    }
+  
+    await OBR.scene.items.addItems([imageItem])
+    setTimeout(() => {
+      OBR.scene.items.deleteItems([id])
+    }, 3000)
+  
+    if (soundUrl) {
+      const audio = new Audio(soundUrl)
+      audio.play().catch(() => {})
+    }
+  }
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0]
