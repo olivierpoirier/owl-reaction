@@ -1,5 +1,5 @@
 {
-    "name": "Owl Reaction",
+    "name": "Owl Reaction!",
     "version": "1.0.0",
     "manifest_version": 1,
     "action": {
@@ -8,5 +8,8 @@
       "popover": "/",
       "height": 600,
       "width": 400
-    }
+    },
+    "permissions": ["SCENE"],
+    "popout": true
   }
+  

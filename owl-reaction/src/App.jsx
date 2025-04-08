@@ -5,6 +5,8 @@ export default function App() {
   const [tokens, setTokens] = useState([])
 
   useEffect(() => {
+    console.log(tokens)
+    console.log("je suis dans le use effect")
     const unsubscribe = OBR.onReady(async () => {
       const items = await OBR.scene.items.getItems()
       const tokenItems = items.filter((item) => item.type === "token")
