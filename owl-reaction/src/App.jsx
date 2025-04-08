@@ -72,23 +72,28 @@ export default function App() {
   // 💥 Agrandit temporairement un token
   const enlargeTemporarily = async (item) => {
     const originalScale = item.scale || { x: 1, y: 1 }
-
-    const enlarged = {
-      ...item,
-      scale: { x: originalScale.x * 4, y: originalScale.y * 4 },
-    }
-
-    await OBR.scene.items.updateItems([enlarged])
-
+  
+    // Mise à jour uniquement des propriétés modifiables
+    await OBR.scene.items.updateItems([
+      {
+        id: item.id,
+        scale: {
+          x: originalScale.x * 4,
+          y: originalScale.y * 4,
+        },
+      }
+    ])
+  
     setTimeout(async () => {
       await OBR.scene.items.updateItems([
         {
-          ...item,
+          id: item.id,
           scale: originalScale,
-        },
+        }
       ])
     }, 1000)
   }
+  
 
   // 📌 Clic sur une image
   const handleClick = async (item) => {
