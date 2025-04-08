@@ -25,7 +25,7 @@ export default function App() {
           const items = await OBR.scene.items.getItems()
           console.log("📦 Tous les items de la scène :", items)
           items.forEach(item => console.log("🔎 Item type:", item.type, "→", item.name))
-          const tokenItems = items.filter((item) => item.type === "token")
+          const tokenItems = items.filter((item) => item.type === "IMAGE")
           console.log("🧩 Tokens détectés :", tokenItems)
           setTokens(tokenItems)
 
