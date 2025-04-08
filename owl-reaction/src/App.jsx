@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import OBR, { buildImage } from "@owlbear-rodeo/sdk"
+import OBR, { Image, buildImage } from "@owlbear-rodeo/sdk"
 
 const BROADCAST_EVENT = "owl-reaction-play"
 
@@ -9,72 +9,68 @@ export default function App() {
   const [soundUrl, setSoundUrl] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = OBR.onReady(async () => {
+    OBR.onReady(async () => {
       const checkScene = async () => {
-        try {
-          const isSceneReady = await OBR.scene.isReady()
-          if (!isSceneReady) {
-            setTimeout(checkScene, 500)
-            return
-          }
+        const isSceneReady = await OBR.scene.isReady()
+        if (!isSceneReady) {
+          setTimeout(checkScene, 500)
+          return
+        }
 
-          const sceneItems = await OBR.scene.items.getItems()
-          const filtered = sceneItems.filter(
+        const sceneItems = await OBR.scene.items.getItems()
+        const filtered = sceneItems.filter(
+          (item) => item.type === "IMAGE" || item.type === "TEXT"
+        )
+        setItems(filtered)
+
+        OBR.scene.items.onChange((updatedItems) => {
+          const updatedFiltered = updatedItems.filter(
             (item) => item.type === "IMAGE" || item.type === "TEXT"
           )
-          setItems(filtered)
-
-          const unsubChange = OBR.scene.items.onChange((updatedItems) => {
-            const filteredUpdated = updatedItems.filter(
-              (item) => item.type === "IMAGE" || item.type === "TEXT"
-            )
-            setItems(filteredUpdated)
-          })
-
-          return () => unsubChange()
-        } catch (err) {
-          console.error("❌ Erreur lors du chargement de la scène :", err)
-          setNoScene(true)
-        }
+          setItems(updatedFiltered)
+        })
       }
 
       checkScene()
-
-      // 🔊 Réception de l’événement broadcast
-      OBR.broadcast.onMessage(BROADCAST_EVENT, async ({ imageUrl }) => {
-        try {
-          const camera = await OBR.viewport.getCamera()
-          const center = camera.position
-
-          const id = `popup-${Date.now()}`
-          const popup = buildImage()
-            .id(id)
-            .url(imageUrl)
-            .position(center)
-            .scale({ x: 4, y: 4 })
-            .layer("ATTACHMENT")
-            .locked(true)
-            .disableHit(true)
-            .visible(true)
-            .build()
-
-          await OBR.scene.items.addItems([popup])
-          setTimeout(() => {
-            OBR.scene.items.deleteItems([id])
-          }, 3000)
-
-          // Lecture du son si chargé localement
-          if (soundUrl) {
-            const audio = new Audio(soundUrl)
-            audio.play().catch((e) => console.warn("🔇 Son bloqué :", e))
-          }
-        } catch (e) {
-          console.warn("❌ Erreur broadcast :", e)
-        }
-      })
     })
 
-    return () => unsubscribe()
+    // 🔊 Écoute des broadcasts (SDK v3)
+    const handleMessage = async (message) => {
+      if (message && message.type === BROADCAST_EVENT && message.data?.imageUrl) {
+        const { imageUrl } = message.data
+
+        const camera = await OBR.viewport.getCamera()
+        const center = camera.position
+        const id = `popup-${Date.now()}`
+
+        const popup = {
+          type: "IMAGE",
+          id,
+          image: { url: imageUrl },
+          position: center,
+          scale: { x: 4, y: 4 },
+          layer: "ATTACHMENT",
+          locked: true,
+          disabled: true,
+          visible: true,
+        }
+
+        await OBR.scene.items.addItems([popup])
+        setTimeout(() => {
+          OBR.scene.items.deleteItems([id])
+        }, 3000)
+
+        if (soundUrl) {
+          const audio = new Audio(soundUrl)
+          audio.play().catch((e) => console.warn("🔇 Son bloqué :", e))
+        }
+      }
+    }
+
+    OBR.broadcast.onMessage(handleMessage)
+    return () => {
+      OBR.broadcast.offMessage(handleMessage)
+    }
   }, [soundUrl])
 
   const handleFileUpload = (e) => {
@@ -91,9 +87,7 @@ export default function App() {
       return
     }
 
-    await OBR.broadcast.sendMessage(BROADCAST_EVENT, {
-      imageUrl,
-    })
+    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
   }
 
   return (
