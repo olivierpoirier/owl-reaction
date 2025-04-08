@@ -9,25 +9,23 @@ export default function App() {
   const [canResize, setCanResize] = useState(false)
   const [isGM, setIsGM] = useState(false)
 
-  // 🔁 Initialisation : récupérer rôle + valeur du paramètre partagé
+  // 🔁 Initialisation
   useEffect(() => {
     OBR.onReady(async () => {
       const role = await OBR.player.getRole()
       setIsGM(role === "GM")
 
-      const setting = await OBR.settings.getShared(SETTINGS_KEY)
-      setCanResize(Boolean(setting))
+      const metadata = await OBR.scene.getMetadata()
+      setCanResize(Boolean(metadata[SETTINGS_KEY]))
 
-      // 🎧 Écouter les changements du paramètre partagé
-      OBR.settings.onChange((changes) => {
-        if ("shared" in changes && SETTINGS_KEY in changes.shared) {
-          setCanResize(Boolean(changes.shared[SETTINGS_KEY]))
-        }
+      // 🎧 Synchronisation automatique
+      OBR.scene.onMetadataChange((newMeta) => {
+        setCanResize(Boolean(newMeta[SETTINGS_KEY]))
       })
     })
   }, [])
 
-  // 📦 Chargement des items de la scène
+  // 📦 Chargement des items
   useEffect(() => {
     const unsubscribe = OBR.onReady(async () => {
       const checkScene = async () => {
@@ -64,14 +62,14 @@ export default function App() {
     return () => unsubscribe()
   }, [])
 
-  // 🔘 Toggle MJ pour activer/désactiver le redimensionnement des joueurs
+  // 🔘 Toggle MJ
   const toggleResizePermission = async () => {
     const newValue = !canResize
-    await OBR.settings.setShared(SETTINGS_KEY, newValue)
+    await OBR.scene.setMetadata({ [SETTINGS_KEY]: newValue })
     setCanResize(newValue)
   }
 
-  // 💥 Fonction pour agrandir temporairement une image
+  // 💥 Agrandit temporairement un token
   const enlargeTemporarily = async (item) => {
     const originalScale = item.scale || { x: 1, y: 1 }
 
@@ -92,7 +90,7 @@ export default function App() {
     }, 1000)
   }
 
-  // 📌 Clic sur une image : vérifie si le resize est autorisé
+  // 📌 Clic sur une image
   const handleClick = async (item) => {
     if (item.type !== "IMAGE") return
 
