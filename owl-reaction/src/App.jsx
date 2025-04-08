@@ -9,7 +9,7 @@ export default function App() {
   const [canResize, setCanResize] = useState(false)
   const [isGM, setIsGM] = useState(false)
 
-  // 🔁 Initialisation
+  // 🔁 Initialisation (rôle + métadonnées)
   useEffect(() => {
     OBR.onReady(async () => {
       const role = await OBR.player.getRole()
@@ -18,16 +18,17 @@ export default function App() {
       const metadata = await OBR.scene.getMetadata()
       setCanResize(Boolean(metadata[SETTINGS_KEY]))
 
-      // 🎧 Synchronisation automatique
       OBR.scene.onMetadataChange((newMeta) => {
         setCanResize(Boolean(newMeta[SETTINGS_KEY]))
       })
     })
   }, [])
 
-  // 📦 Chargement des items
+  // 📦 Chargement et suivi des items
   useEffect(() => {
-    const unsubscribe = OBR.onReady(async () => {
+    let cleanup = () => {}
+
+    OBR.onReady(async () => {
       const checkScene = async () => {
         try {
           const isSceneReady = await OBR.scene.isReady()
@@ -49,7 +50,7 @@ export default function App() {
             setItems(filteredUpdated)
           })
 
-          return () => unsubChange()
+          cleanup = unsubChange
         } catch (err) {
           console.error("❌ Erreur lors du chargement de la scène :", err)
           setNoScene(true)
@@ -59,7 +60,9 @@ export default function App() {
       checkScene()
     })
 
-    return () => unsubscribe()
+    return () => {
+      cleanup()
+    }
   }, [])
 
   // 🔘 Toggle MJ
@@ -69,11 +72,10 @@ export default function App() {
     setCanResize(newValue)
   }
 
-  // 💥 Agrandit temporairement un token
+  // 💥 Agrandir temporairement
   const enlargeTemporarily = async (item) => {
     const originalScale = item.scale || { x: 1, y: 1 }
-  
-    // Mise à jour uniquement des propriétés modifiables
+
     await OBR.scene.items.updateItems([
       {
         id: item.id,
@@ -83,7 +85,7 @@ export default function App() {
         },
       }
     ])
-  
+
     setTimeout(async () => {
       await OBR.scene.items.updateItems([
         {
@@ -93,9 +95,8 @@ export default function App() {
       ])
     }, 1000)
   }
-  
 
-  // 📌 Clic sur une image
+  // 🖱️ Clic image
   const handleClick = async (item) => {
     if (item.type !== "IMAGE") return
 
@@ -141,7 +142,7 @@ export default function App() {
             .map((item) => (
               <div key={item.id} className="aspect-square">
                 <img
-                  src={item.image.url}
+                  src={item.image?.url || ""}
                   alt={item.name || "Image"}
                   className="w-full h-full object-contain rounded shadow cursor-pointer hover:scale-105 transition"
                   onClick={() => handleClick(item)}
