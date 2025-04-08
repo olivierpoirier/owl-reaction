@@ -3,40 +3,47 @@ import OBR from "@owlbear-rodeo/sdk"
 
 export default function App() {
   const [tokens, setTokens] = useState([])
+  const [noScene, setNoScene] = useState(false)
 
   useEffect(() => {
-    console.log("🔄 useEffect déclenché, en attente que OBR soit prêt...")
+    console.log("🔄 useEffect déclenché, en attente de OBR...")
 
     const unsubscribe = OBR.onReady(async () => {
-      console.log("✅ OBR est prêt")
+      console.log("✅ OBR prêt. En attente de la scène...")
 
-      try {
-        const items = await OBR.scene.items.getItems()
-        console.log("📦 Tous les objets de la scène :", items)
+      const checkScene = async () => {
+        try {
+          const isSceneReady = await OBR.scene.isReady()
+          if (!isSceneReady) {
+            console.log("🕓 Scène pas encore prête, nouvelle tentative dans 500ms")
+            setTimeout(checkScene, 500)
+            return
+          }
 
-        const tokenItems = items.filter((item) => item.type === "token")
-        console.log("🧩 Tokens détectés :", tokenItems)
+          console.log("✅ Scène active détectée")
 
-        setTokens(tokenItems)
+          const items = await OBR.scene.items.getItems()
+          const tokenItems = items.filter((item) => item.type === "token")
+          console.log("🧩 Tokens détectés :", tokenItems)
+          setTokens(tokenItems)
 
-        const unsubChange = OBR.scene.items.onChange((updatedItems) => {
-          console.log("🔁 Mise à jour de la scène détectée")
-          const updatedTokens = updatedItems.filter((item) => item.type === "token")
-          console.log("🧩 Tokens mis à jour :", updatedTokens)
-          setTokens(updatedTokens)
-        })
+          const unsubChange = OBR.scene.items.onChange((updatedItems) => {
+            const updatedTokens = updatedItems.filter((item) => item.type === "token")
+            setTokens(updatedTokens)
+          })
 
-        return () => {
-          console.log("🧹 Nettoyage de l'écouteur de scène")
-          unsubChange()
+          return () => unsubChange()
+        } catch (err) {
+          console.error("❌ Erreur lors du chargement de la scène :", err)
+          setNoScene(true)
         }
-      } catch (err) {
-        console.error("❌ Erreur en récupérant les items de la scène :", err)
       }
+
+      checkScene()
     })
 
     return () => {
-      console.log("🧹 Nettoyage du useEffect principal")
+      console.log("🧹 Nettoyage de OBR.onReady")
       unsubscribe()
     }
   }, [])
@@ -44,8 +51,11 @@ export default function App() {
   return (
     <div className="p-4">
       <h1 className="text-lg font-bold mb-2">🖼️ Tokens avec image</h1>
-      {tokens.length === 0 ? (
-        <p className="text-sm italic">Aucun token trouvé sur la scène</p>
+
+      {noScene ? (
+        <p className="text-sm text-red-500">🚫 Aucune scène active détectée.</p>
+      ) : tokens.length === 0 ? (
+        <p className="text-sm italic">Aucun token trouvé</p>
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {tokens.map((token) => (
