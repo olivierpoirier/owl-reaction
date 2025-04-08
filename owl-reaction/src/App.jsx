@@ -74,7 +74,7 @@ export default function App() {
                 <img
                   src={item.image.url}
                   alt={item.name || "Image"}
-                  className="w-full h-auto rounded"
+                  className="w-1/5 h-auto rounded"
                 />
               )}
 
