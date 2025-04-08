@@ -81,13 +81,13 @@ export default function App() {
                 />
               )}
 
-            
+            {/*
               {item.type === "TEXT" && (
                 <div className="text-sm font-medium text-center text-blue-700">
                   {item.text?.plainText || "(Texte vide)"}
                 </div>
               )}
-            
+                */}
 
               {/*<p className="text-xs mt-2 text-center text-gray-800 font-semibold">
                 {item.name || "Sans nom"}
