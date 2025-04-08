@@ -1,0 +1,16 @@
+🛠️ Étape 4 : Ajouter à ton /etc/hosts
+Ajoute cette ligne à la fin du fichier :
+
+bash
+Copier
+Modifier
+127.0.0.1 owlbear.local
+🚀 Étape 5 : Lancer Vite
+bash
+Copier
+Modifier
+npm run dev
+
+
+Et tu accèdes à ton app via :
+👉 https://owlbear.local:5173/manifest.json

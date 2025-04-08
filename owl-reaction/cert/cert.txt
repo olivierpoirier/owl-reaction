@@ -1,0 +1,4 @@
+mkcert owlbear.local 127.0.0.1 ::1
+
+mv owlbear.local+2.pem cert.pem
+mv owlbear.local+2-key.pem key.pem
