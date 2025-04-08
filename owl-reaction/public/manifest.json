@@ -1,5 +1,6 @@
 {
     "id": "owl-reaction",
+    "name": "owl-reaction",
     "title": "Owl Reaction",
     "description": "Permet d’agrandir temporairement des tokens. Le MJ peut autoriser ou bloquer la fonction.",
     "version": "1.0.0",
@@ -16,4 +17,3 @@
     ],
     "tags": ["visual", "utility", "gm"]
   }
-  
