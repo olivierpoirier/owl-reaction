@@ -8,36 +8,42 @@ export default function App() {
   const [soundUrl, setSoundUrl] = useState(null)
 
   useEffect(() => {
+    const handleMessage = (message) => {
+      if (message?.type !== BROADCAST_EVENT) return
+      const { imageUrl } = message.data
+      if (typeof imageUrl === "string") {
+        displayImagePopup(imageUrl)
+      }
+    }
+
     OBR.onReady(async () => {
+      // Charger les images de la scène
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
-        const filtered = allItems.filter(item => item.type === "IMAGE" && item.image?.url)
+        const filtered = allItems.filter(
+          (item) => item.type === "IMAGE" && item.image?.url
+        )
         setItems(filtered)
-  
+
         OBR.scene.items.onChange((updated) => {
-          const updatedFiltered = updated.filter(item => item.type === "IMAGE" && item.image?.url)
+          const updatedFiltered = updated.filter(
+            (item) => item.type === "IMAGE" && item.image?.url
+          )
           setItems(updatedFiltered)
         })
+
+        // Écoute des broadcasts
+        OBR.broadcast.onMessage(handleMessage)
       }
-  
-      // ✅ NE PAS utiliser de async directement ici
-      const handleMessage = (message) => {
-        if (message?.type !== BROADCAST_EVENT) return
-        displayImagePopup(message.data.imageUrl)
-      }
-  
-      OBR.broadcast.onMessage(handleMessage)
     })
   }, [soundUrl])
-  
-  // ✅ async déplacé ici
+
+  // Crée et affiche l'image temporaire sur la carte
   const displayImagePopup = async (imageUrl) => {
-    if (!imageUrl) return
-  
     const camera = await OBR.viewport.getCamera()
     const position = camera.position
     const id = `popup-${Date.now()}`
-  
+
     const imageItem = {
       type: "IMAGE",
       id,
@@ -49,27 +55,29 @@ export default function App() {
       disabled: true,
       visible: true,
     }
-  
+
     await OBR.scene.items.addItems([imageItem])
+
     setTimeout(() => {
       OBR.scene.items.deleteItems([id])
     }, 3000)
-  
+
     if (soundUrl) {
       const audio = new Audio(soundUrl)
       audio.play().catch(() => {})
     }
   }
 
-  const handleFileUpload = (e) => {
+  const handleSoundUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
       setSoundUrl(URL.createObjectURL(file))
     }
   }
 
-  const handleClickToken = (imageUrl) => {
-    OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
+  const handleClickImage = async (imageUrl) => {
+    if (!imageUrl) return
+    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
   }
 
   return (
@@ -77,8 +85,13 @@ export default function App() {
       <h1 className="text-lg font-bold mb-4 text-center">🦉 Owl Reaction</h1>
 
       <div className="mb-4">
-        <label className="block text-sm font-semibold mb-1">Dépose un son :</label>
-        <input type="file" accept="audio/*" onChange={handleFileUpload} className="block w-full" />
+        <label className="block text-sm font-semibold mb-1">🎵 Dépose un son :</label>
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={handleSoundUpload}
+          className="block w-full"
+        />
         {soundUrl && <p className="text-xs text-green-600 mt-1">✅ Son chargé</p>}
       </div>
 
@@ -87,7 +100,7 @@ export default function App() {
           <div
             key={item.id}
             className="aspect-square cursor-pointer"
-            onClick={() => handleClickToken(item.image.url)}
+            onClick={() => handleClickImage(item.image.url)}
           >
             <img
               src={item.image.url}
