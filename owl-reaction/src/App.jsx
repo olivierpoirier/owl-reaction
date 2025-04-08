@@ -28,6 +28,8 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = OBR.onReady(async () => {
       const items = await OBR.scene.items.getItems()
+      console.log("tokens de la map :");
+      console.log(items);
       const tokenItems = items.filter((item) => item.type === "token")
       console.log("🧩 Mes tokens:", tokenItems)
       setTokens(tokenItems)
