@@ -7,16 +7,6 @@ export default function App() {
   const [items, setItems] = useState([])
   const [soundUrl, setSoundUrl] = useState(null)
 
-  // ✅ Vérifie que la donnée est JSON-sérialisable
-  function isJSONSerializable(value) {
-    try {
-      JSON.stringify(value)
-      return true
-    } catch {
-      return false
-    }
-  }
-
   useEffect(() => {
     const handleMessage = (message) => {
       if (message?.type !== BROADCAST_EVENT) return
@@ -27,7 +17,7 @@ export default function App() {
         console.warn("❌ imageUrl non valide dans le broadcast :", message)
       }
     }
-  
+
     OBR.onReady(async () => {
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
@@ -35,18 +25,18 @@ export default function App() {
           (item) => item.type === "IMAGE" && item.image?.url
         )
         setItems(filtered)
-  
+
         OBR.scene.items.onChange((updated) => {
           const updatedFiltered = updated.filter(
             (item) => item.type === "IMAGE" && item.image?.url
           )
           setItems(updatedFiltered)
         })
-  
+
         OBR.broadcast.onMessage(handleMessage)
       }
     })
-  }, [])
+  }, []) // ✅ pas de dépendance à soundUrl
 
   const displayImagePopup = async (imageUrl) => {
     const camera = await OBR.viewport.getCamera()
@@ -71,6 +61,7 @@ export default function App() {
       OBR.scene.items.deleteItems([id])
     }, 3000)
 
+    // ✅ Seul l'utilisateur local joue le son (si présent)
     if (soundUrl) {
       const audio = new Audio(soundUrl)
       audio.play().catch(() => {})
@@ -87,12 +78,14 @@ export default function App() {
   const handleClickImage = async (imageUrl) => {
     const data = { imageUrl }
 
-    if (!isJSONSerializable(data)) {
-      console.warn("❌ Donnée non JSON-sérialisable :", data)
-      return
+    // Vérifie que l'image est bien sérialisable
+    try {
+      await OBR.broadcast.sendMessage(BROADCAST_EVENT, data)
+      // ✅ Et aussi localement pour l’émetteur (car il ne reçoit pas son propre broadcast)
+      await displayImagePopup(imageUrl)
+    } catch (e) {
+      console.warn("❌ Erreur lors du broadcast :", e)
     }
-
-    await OBR.broadcast.sendMessage(BROADCAST_EVENT, data)
   }
 
   return (
@@ -100,7 +93,7 @@ export default function App() {
       <h1 className="text-lg font-bold mb-4 text-center">🦉 Owl Reaction</h1>
 
       <div className="mb-4">
-        <label className="block text-sm font-semibold mb-1">🎵 Dépose un son :</label>
+        <label className="block text-sm font-semibold mb-1">🎵 Dépose un son (optionnel) :</label>
         <input
           type="file"
           accept="audio/*"
