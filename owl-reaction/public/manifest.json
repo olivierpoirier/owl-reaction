@@ -1,5 +1,5 @@
 {
-    "name": "Owl Reaction",
+    "name": "Owl Reaction!",
     "version": "1.0.0",
     "manifest_version": 1,
     "action": {
@@ -9,4 +9,5 @@
       "height": 600,
       "width": 400
     }
-  }
+}
+  
