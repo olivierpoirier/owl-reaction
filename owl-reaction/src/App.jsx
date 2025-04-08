@@ -16,7 +16,7 @@ export default function App() {
     const rlkey = urlObj.searchParams.get("rlkey")
     const st = urlObj.searchParams.get("st")
 
-    if (!rlkey || !st) return url // si les clés manquent, ne rien faire
+    if (!rlkey || !st) return url
 
     return `https://www.dropbox.com${pathname}?rlkey=${rlkey}&st=${st}&raw=1`
   }
@@ -24,11 +24,16 @@ export default function App() {
   // 📡 Écoute des messages audio
   useEffect(() => {
     OBR.onReady(() => {
-      OBR.broadcast.onMessage("mini-tracks-play", ({ url }) => {
-        const audio = new Audio(url)
-        audio.play().catch((e) => {
-          console.warn("🔇 Audio bloqué :", e)
-        })
+      OBR.broadcast.onMessage("mini-tracks-play", ({ url, playAt, from }) => {
+        console.log("📥 Reçu mini-tracks-play depuis", from, url)
+        const wait = Math.max(playAt - Date.now(), 0)
+
+        setTimeout(() => {
+          const audio = new Audio(url)
+          audio.play()
+            .then(() => console.log("🔊 Audio joué avec succès"))
+            .catch((e) => console.warn("🔇 Échec de lecture audio :", e))
+        }, wait)
       })
     })
   }, [])
@@ -69,9 +74,21 @@ export default function App() {
   }, [])
 
   function playTrack() {
-    const audio = new Audio(audioUrl)
-    audio.play().catch(e => console.warn("🔇 Audio bloqué :", e))
-    OBR.broadcast.sendMessage("mini-tracks-play", { url: audioUrl })
+    const delay = 600
+    const playAt = Date.now() + delay
+
+    OBR.player.getId().then((playerId) => {
+      OBR.broadcast.sendMessage("mini-tracks-play", {
+        url: audioUrl,
+        playAt,
+        from: playerId,
+      })
+    })
+
+    setTimeout(() => {
+      const audio = new Audio(audioUrl)
+      audio.play().catch(e => console.warn("🔇 Audio bloqué localement :", e))
+    }, delay)
   }
 
   function makeItemBigger(item) {
@@ -79,7 +96,6 @@ export default function App() {
     const normalScaley = item.scale.y
 
     if (!item.metadata.isAlreadyClicked || item.metadata.isAlreadyClicked === false) {
-      playTrack()
       OBR.scene.items.updateItems([item.id], (items) => {
         for (let item of items) {
           item.scale.x = 50
@@ -88,7 +104,7 @@ export default function App() {
         }
       })
 
-
+      playTrack()
 
       setTimeout(() => {
         OBR.scene.items.updateItems([item.id], (items) => {
