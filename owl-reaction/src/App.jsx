@@ -6,8 +6,7 @@ const BROADCAST_EVENT = "owl-reaction-play"
 export default function App() {
   const [items, setItems] = useState([])
   const [noScene, setNoScene] = useState(false)
-  const [soundUrl, setSoundUrl] = useState("")
-  const [audio, setAudio] = useState(null)
+  const [soundBlob, setSoundBlob] = useState(null)
 
   useEffect(() => {
     const unsubscribe = OBR.onReady(async () => {
@@ -41,14 +40,13 @@ export default function App() {
 
       checkScene()
 
-      // 📡 Réception des actions de clic sur token
-      OBR.broadcast.onMessage(BROADCAST_EVENT, async ({ imageUrl, soundUrl }) => {
+      // 🎯 Réception des événements
+      OBR.broadcast.onMessage(BROADCAST_EVENT, async ({ imageUrl }) => {
         try {
-          // Créer un item image temporaire
           const camera = await OBR.viewport.getCamera()
           const center = camera.position
-
           const id = `popup-${Date.now()}`
+
           const popup = buildImage()
             .id(id)
             .url(imageUrl)
@@ -65,9 +63,10 @@ export default function App() {
             OBR.scene.items.deleteItems([id])
           }, 3000)
 
-          // 🎧 Lecture du son localement
-          const audio = new Audio(soundUrl)
-          audio.play().catch((e) => console.warn("🔇 Son bloqué :", e))
+          if (soundBlob) {
+            const audio = new Audio(URL.createObjectURL(soundBlob))
+            audio.play().catch((e) => console.warn("🔇 Son bloqué :", e))
+          }
         } catch (e) {
           console.warn("❌ Erreur pendant le broadcast :", e)
         }
@@ -75,46 +74,33 @@ export default function App() {
     })
 
     return () => unsubscribe()
-  }, [])
-
-  const handleClickToken = async (imageUrl) => {
-    if (!soundUrl) return alert("⚠️ Aucun son chargé")
-    await OBR.broadcast.sendMessage(BROADCAST_EVENT, {
-      imageUrl,
-      soundUrl,
-    })
-  }
+  }, [soundBlob])
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
-      const url = URL.createObjectURL(file)
-      setSoundUrl(url)
-      setAudio(new Audio(url))
+      setSoundBlob(file)
     }
   }
 
-  const handleSoundLink = (e) => {
-    const url = e.target.value
-    setSoundUrl(url)
-    setAudio(new Audio(url))
+  const handleClickToken = async (imageUrl) => {
+    if (!soundBlob) {
+      alert("⚠️ Tu dois déposer un son avant !")
+      return
+    }
+
+    await OBR.broadcast.sendMessage(BROADCAST_EVENT, { imageUrl })
   }
 
   return (
     <div className="p-4 max-w-[500px]">
       <h1 className="text-lg font-bold mb-4 text-center">🎵 Owl Reaction</h1>
 
-      {/* Zone pour déposer un son */}
-      <div className="mb-4 space-y-2">
-        <label className="block text-sm font-semibold">🎧 Dépose un son :</label>
+      {/* 🎧 Dépôt du son uniquement */}
+      <div className="mb-4">
+        <label className="block text-sm font-semibold mb-1">Dépose un son :</label>
         <input type="file" accept="audio/*" onChange={handleFileUpload} className="block w-full" />
-        <input
-          type="text"
-          placeholder="Ou colle un lien vers un son..."
-          className="w-full border rounded px-2 py-1 text-sm"
-          onBlur={handleSoundLink}
-        />
-        {soundUrl && <p className="text-xs text-green-600">✅ Son prêt</p>}
+        {soundBlob && <p className="text-xs text-green-600 mt-1">✅ Son chargé</p>}
       </div>
 
       {noScene ? (
