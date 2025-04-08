@@ -24,6 +24,19 @@ export default function App() {
     return () => unsubscribe()
   }, [])
 
+
+  useEffect(() => {
+    const unsubscribe = OBR.onReady(async () => {
+      const items = await OBR.scene.items.getItems()
+      const tokenItems = items.filter((item) => item.type === "token")
+      console.log("🧩 Mes tokens:", tokenItems)
+      setTokens(tokenItems)
+    })
+  
+    return () => unsubscribe()
+  }, [])
+  
+
   return (
     <div className="p-4">
       <h1 className="text-lg font-bold mb-2">🖼️ Tokens avec image</h1>
