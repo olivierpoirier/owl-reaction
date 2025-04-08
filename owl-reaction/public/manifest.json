@@ -8,13 +8,6 @@
       "popover": "/",
       "height": 600,
       "width": 400
-    },
-    "features": [
-        "player",
-        "scene",
-        "scene-items",
-        "settings"
-    ],
-    "tags": ["visual", "utility", "gm"]
+    }
 }
   

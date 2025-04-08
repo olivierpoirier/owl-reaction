@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import OBR from "@owlbear-rodeo/sdk"
 
-const SETTINGS_KEY = "allow-resize"
+const SETTINGS_KEY = "allowPlayerResize"
 
 export default function App() {
   const [items, setItems] = useState([])
@@ -9,22 +9,21 @@ export default function App() {
   const [canResize, setCanResize] = useState(false)
   const [isGM, setIsGM] = useState(false)
 
-  // 🔁 Récupère les paramètres et le rôle du joueur
+  // 🔁 Initialisation : récupérer rôle + valeur du paramètre partagé
   useEffect(() => {
-    const fetchSettings = async () => {
-      const value = await OBR.settings.get(SETTINGS_KEY)
-      setCanResize(Boolean(value))
-
+    OBR.onReady(async () => {
       const role = await OBR.player.getRole()
       setIsGM(role === "GM")
-    }
 
-    OBR.onReady(fetchSettings)
+      const setting = await OBR.settings.getShared(SETTINGS_KEY)
+      setCanResize(Boolean(setting))
 
-    OBR.settings.onChange((changes) => {
-      if (SETTINGS_KEY in changes) {
-        setCanResize(Boolean(changes[SETTINGS_KEY]))
-      }
+      // 🎧 Écouter les changements du paramètre partagé
+      OBR.settings.onChange((changes) => {
+        if ("shared" in changes && SETTINGS_KEY in changes.shared) {
+          setCanResize(Boolean(changes.shared[SETTINGS_KEY]))
+        }
+      })
     })
   }, [])
 
@@ -65,14 +64,14 @@ export default function App() {
     return () => unsubscribe()
   }, [])
 
-  // 🔄 Toggle GM pour activer/désactiver le redimensionnement
+  // 🔘 Toggle MJ pour activer/désactiver le redimensionnement des joueurs
   const toggleResizePermission = async () => {
     const newValue = !canResize
-    await OBR.settings.set(SETTINGS_KEY, newValue)
+    await OBR.settings.setShared(SETTINGS_KEY, newValue)
     setCanResize(newValue)
   }
 
-  // 💥 Fonction pour agrandir une image temporairement
+  // 💥 Fonction pour agrandir temporairement une image
   const enlargeTemporarily = async (item) => {
     const originalScale = item.scale || { x: 1, y: 1 }
 
@@ -93,7 +92,7 @@ export default function App() {
     }, 1000)
   }
 
-  // 🖱️ Lorsqu’un joueur clique sur une image
+  // 📌 Clic sur une image : vérifie si le resize est autorisé
   const handleClick = async (item) => {
     if (item.type !== "IMAGE") return
 
@@ -112,7 +111,7 @@ export default function App() {
 
       {isGM && (
         <div className="flex items-center justify-between mb-4 p-2 bg-gray-100 rounded shadow">
-          <span className="font-medium">🔧 Autoriser redimensionnement</span>
+          <span className="font-medium">🎛️ Autoriser redimensionnement joueurs</span>
           <button
             onClick={toggleResizePermission}
             className={`px-4 py-1 rounded text-white font-semibold ${
