@@ -27,7 +27,7 @@ export default function App() {
         console.warn("❌ imageUrl non valide dans le broadcast :", message)
       }
     }
-
+  
     OBR.onReady(async () => {
       if (await OBR.scene.isReady()) {
         const allItems = await OBR.scene.items.getItems()
@@ -35,18 +35,18 @@ export default function App() {
           (item) => item.type === "IMAGE" && item.image?.url
         )
         setItems(filtered)
-
+  
         OBR.scene.items.onChange((updated) => {
           const updatedFiltered = updated.filter(
             (item) => item.type === "IMAGE" && item.image?.url
           )
           setItems(updatedFiltered)
         })
-
+  
         OBR.broadcast.onMessage(handleMessage)
       }
     })
-  }, [soundUrl])
+  }, [])
 
   const displayImagePopup = async (imageUrl) => {
     const camera = await OBR.viewport.getCamera()
