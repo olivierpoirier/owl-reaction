@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react"
 import OBR from "@owlbear-rodeo/sdk"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function App() {
   const [items, setItems] = useState([])
   const [noScene, setNoScene] = useState(false)
-  const [audioUrl, setAudioUrl] = useState("https://www.dropbox.com/scl/fi/hwj7tbuvfrjtd0krux7ju/vine-boom.mp3?rlkey=50uvrj4igfqbikaji05lo56th&st=n55b7nns&raw=1")
+  const [audioUrl, setAudioUrl] = useState("")
+  const [audioList, setAudioList] = useState([])
   const [helpOpen, setHelpOpen] = useState(false)
+  const [notification, setNotification] = useState(null)
+
+  const apiUrl = "https://owl-reaction-backend-server.vercel.app/api/dropbox-files" // 🔁 À adapter selon ton déploiement
 
   function convertDropboxLink(url) {
     if (!url.includes("dropbox.com")) return url
@@ -30,6 +34,9 @@ export default function App() {
         const from = event.connectionId
 
         console.log("📥 Reçu mini-tracks-play depuis", from ?? "❓ inconnu", url)
+        setNotification(`🔊 Son déclenché par ${from?.slice(0, 6) ?? "❓ inconnu"}`)
+        setTimeout(() => setNotification(null), 3000)
+
         const wait = Math.max(playAt - Date.now(), 0)
 
         setTimeout(() => {
@@ -77,6 +84,21 @@ export default function App() {
     })
   }, [])
 
+  // 🔄 Récupération des sons depuis le backend
+  useEffect(() => {
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(data => {
+        setAudioList(data)
+        if (data.length > 0) {
+          const first = data[0].path
+          const fixedUrl = `https://www.dropbox.com/home${first}?raw=1`.replace("/home", "")
+          setAudioUrl(fixedUrl)
+        }
+      })
+      .catch(err => console.error("❌ Erreur chargement des sons :", err))
+  }, [])
+
   function playTrack() {
     const delay = 600
     const playAt = Date.now() + delay
@@ -102,8 +124,8 @@ export default function App() {
     if (!item.metadata.isAlreadyClicked || item.metadata.isAlreadyClicked === false) {
       OBR.scene.items.updateItems([item.id], (items) => {
         for (let item of items) {
-          item.scale.x = 50
-          item.scale.y = 50
+          item.scale.x = 10
+          item.scale.y = 10
           item.metadata.isAlreadyClicked = true
         }
       })
@@ -124,6 +146,19 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-2 rounded shadow-lg z-50"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            {notification}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.h1
         className="text-3xl font-extrabold text-center mb-6 text-white"
         initial={{ opacity: 0, y: -20 }}
@@ -139,6 +174,21 @@ export default function App() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
+        {audioList.length > 0 && (
+          <select
+            className="w-full border border-gray-300 rounded px-4 py-2 text-sm mb-2 bg-white"
+            value={audioUrl}
+            onChange={(e) => setAudioUrl(e.target.value)}
+          >
+            {audioList.map((file) => {
+              const url = `https://www.dropbox.com${file.path}?raw=1`
+              return (
+                <option key={file.name} value={url}>{file.name}</option>
+              )
+            })}
+          </select>
+        )}
+
         <input
           className="w-full border border-gray-300 rounded px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="text"
@@ -179,7 +229,7 @@ export default function App() {
               Le son est <strong>diffusé à tous les joueurs</strong> via Owlbear.
             </li>
             <li>
-              Tu peux changer le son en collant un lien direct vers un <strong>fichier audio hébergé</strong>.
+              Tu peux sélectionner un son Dropbox depuis la liste déroulante, ou coller un lien à la main.
             </li>
             <li>
               Pour Dropbox :
