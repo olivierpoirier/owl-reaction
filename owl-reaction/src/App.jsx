@@ -10,7 +10,7 @@ export default function App() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [notification, setNotification] = useState(null)
 
-  const apiUrl = "https://owl-reaction-backend-server.vercel.app/api/dropbox-files" // 🔁 À adapter selon ton déploiement
+  const apiUrl = "https://owl-reaction-backend.vercel.app/api/dropbox-files"
 
   function convertDropboxLink(url) {
     if (!url.includes("dropbox.com")) return url
@@ -25,7 +25,6 @@ export default function App() {
     return `https://www.dropbox.com${pathname}?rlkey=${rlkey}&st=${st}&raw=1`
   }
 
-  // 📡 Écoute des messages audio
   useEffect(() => {
     OBR.onReady(() => {
       console.log("🟢 OBR prêt, écoute de mini-tracks-play...")
@@ -49,7 +48,6 @@ export default function App() {
     })
   }, [])
 
-  // 🎬 Initialisation de la scène
   useEffect(() => {
     OBR.onReady(async () => {
       const checkScene = async () => {
@@ -84,15 +82,15 @@ export default function App() {
     })
   }, [])
 
-  // 🔄 Récupération des sons depuis le backend
   useEffect(() => {
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
+        console.log("🎧 Fichiers Dropbox récupérés :", data)
         setAudioList(data)
         if (data.length > 0) {
           const first = data[0].path
-          const fixedUrl = `https://www.dropbox.com/home${first}?raw=1`.replace("/home", "")
+          const fixedUrl = `https://www.dropbox.com${first}?raw=1`
           setAudioUrl(fixedUrl)
         }
       })
@@ -174,6 +172,10 @@ export default function App() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
+        <p className="text-xs text-blue-500 mb-1">
+          🎧 Fichiers trouvés : {audioList.length}
+        </p>
+
         {audioList.length > 0 && (
           <select
             className="w-full border border-gray-300 rounded px-4 py-2 text-sm mb-2 bg-white"
