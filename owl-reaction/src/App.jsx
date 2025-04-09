@@ -25,7 +25,10 @@ export default function App() {
   useEffect(() => {
     OBR.onReady(() => {
       console.log("🟢 OBR prêt, écoute de mini-tracks-play...")
-      OBR.broadcast.onMessage("mini-tracks-play", ({ url, playAt, from }) => {
+      OBR.broadcast.onMessage("mini-tracks-play", (event) => {
+        const { url, playAt } = event.data
+        const from = event.connectionId
+
         console.log("📥 Reçu mini-tracks-play depuis", from ?? "❓ inconnu", url)
         const wait = Math.max(playAt - Date.now(), 0)
 
@@ -78,16 +81,13 @@ export default function App() {
     const delay = 600
     const playAt = Date.now() + delay
 
-    OBR.player.getId().then((playerId) => {
-      const message = {
-        url: audioUrl,
-        playAt,
-        from: playerId ?? "inconnu"
-      }
+    const message = {
+      url: audioUrl,
+      playAt
+    }
 
-      console.log("📤 Envoi du message mini-tracks-play :", message)
-      OBR.broadcast.sendMessage("mini-tracks-play", message)
-    })
+    console.log("📤 Envoi du message mini-tracks-play :", message)
+    OBR.broadcast.sendMessage("mini-tracks-play", message)
 
     setTimeout(() => {
       const audio = new Audio(audioUrl)
