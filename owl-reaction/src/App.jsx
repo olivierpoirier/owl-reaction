@@ -10,7 +10,7 @@ export default function App() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [notification, setNotification] = useState(null)
 
-  const apiUrl = "https://owl-reaction-backend.vercel.app/api/dropbox-files"
+  const apiUrl = "https://owl-reaction-backend-server.vercel.app/api/dropbox-files"
 
   function convertDropboxLink(url) {
     if (!url.includes("dropbox.com")) return url
