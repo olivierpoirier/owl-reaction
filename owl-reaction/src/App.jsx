@@ -12,19 +12,6 @@ export default function App() {
 
   const apiUrl = "https://owl-reaction-backend-server.vercel.app/api/dropbox-files"
 
-  function convertDropboxLink(url) {
-    if (!url.includes("dropbox.com")) return url
-
-    const urlObj = new URL(url)
-    const pathname = urlObj.pathname
-    const rlkey = urlObj.searchParams.get("rlkey")
-    const st = urlObj.searchParams.get("st")
-
-    if (!rlkey || !st) return url
-
-    return `https://www.dropbox.com${pathname}?rlkey=${rlkey}&st=${st}&raw=1`
-  }
-
   useEffect(() => {
     OBR.onReady(() => {
       console.log("🟢 OBR prêt, écoute de mini-tracks-play...")
@@ -82,16 +69,26 @@ export default function App() {
     })
   }, [])
 
+  // 🛠️ Correction des liens Dropbox depuis le backend
   useEffect(() => {
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
         console.log("🎧 Fichiers Dropbox récupérés :", data)
-        setAudioList(data)
-        if (data.length > 0) {
-          const first = data[0].path
-          const fixedUrl = `https://www.dropbox.com${first}?raw=1`
-          setAudioUrl(fixedUrl)
+
+        const fixed = data.map(file => {
+          let fixedUrl = file.url
+          if (fixedUrl.includes("?dl=0")) {
+            fixedUrl = fixedUrl.replace("?dl=0", "?raw=1")
+          } else if (!fixedUrl.includes("?raw=1")) {
+            fixedUrl += "?raw=1"
+          }
+          return { name: file.name, url: fixedUrl }
+        })
+
+        setAudioList(fixed)
+        if (fixed.length > 0) {
+          setAudioUrl(fixed[0].url)
         }
       })
       .catch(err => console.error("❌ Erreur chargement des sons :", err))
@@ -182,12 +179,9 @@ export default function App() {
             value={audioUrl}
             onChange={(e) => setAudioUrl(e.target.value)}
           >
-            {audioList.map((file) => {
-              const url = `https://www.dropbox.com${file.path}?raw=1`
-              return (
-                <option key={file.name} value={url}>{file.name}</option>
-              )
-            })}
+            {audioList.map((file) => (
+              <option key={file.name} value={file.url}>{file.name}</option>
+            ))}
           </select>
         )}
 
@@ -195,7 +189,7 @@ export default function App() {
           className="w-full border border-gray-300 rounded px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="text"
           value={audioUrl}
-          onChange={(e) => setAudioUrl(convertDropboxLink(e.target.value))}
+          onChange={(e) => setAudioUrl(e.target.value)}
           placeholder="Colle ici ton lien audio (Dropbox, etc.)"
         />
         <p className="text-xs text-gray-400 mt-1 break-all">
