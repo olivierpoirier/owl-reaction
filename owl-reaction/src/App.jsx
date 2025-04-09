@@ -69,7 +69,6 @@ export default function App() {
     })
   }, [])
 
-  // 🛠️ Correction des liens Dropbox depuis le backend
   useEffect(() => {
     fetch(apiUrl)
       .then(res => res.json())
@@ -78,11 +77,7 @@ export default function App() {
 
         const fixed = data.map(file => {
           let fixedUrl = file.url
-          if (fixedUrl.includes("?dl=0")) {
-            fixedUrl = fixedUrl.replace("?dl=0", "?raw=1")
-          } else if (!fixedUrl.includes("?raw=1")) {
-            fixedUrl += "?raw=1"
-          }
+          fixedUrl = fixedUrl.replace(/([?&])dl=0(&|$)/, "$1raw=1$2")
           return { name: file.name, url: fixedUrl }
         })
 
@@ -170,7 +165,7 @@ export default function App() {
         transition={{ delay: 0.2, duration: 0.6 }}
       >
         <p className="text-xs text-blue-500 mb-1">
-          🎧 Fichiers trouvés : {audioList.length}
+          🎷 Fichiers trouvés : {audioList.length}
         </p>
 
         {audioList.length > 0 && (
@@ -189,7 +184,11 @@ export default function App() {
           className="w-full border border-gray-300 rounded px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           type="text"
           value={audioUrl}
-          onChange={(e) => setAudioUrl(e.target.value)}
+          onChange={(e) => {
+            let value = e.target.value
+            value = value.replace(/([?&])dl=0(&|$)/, "$1raw=1$2")
+            setAudioUrl(value)
+          }}
           placeholder="Colle ici ton lien audio (Dropbox, etc.)"
         />
         <p className="text-xs text-gray-400 mt-1 break-all">
